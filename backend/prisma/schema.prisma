@@ -1,139 +1,117 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model Customer {
-  id               String         @id @default(uuid()) @db.Uuid
-  name             String         @db.VarChar(100)
-  phone            String?        @db.VarChar(20)
-  email            String?        @unique @db.VarChar(150)
-  notifications    Notification[]
-  packagesReceived Package[]      @relation("ReceiverRelation")
-  packagesSent     Package[]      @relation("SenderRelation")
-
-  @@map("customer")
+model address {
+  id                                                         String             @id @db.Uuid
+  street                                                     String             @db.VarChar(150)
+  city                                                       String             @db.VarChar(80)
+  state                                                      String             @db.Char(2)
+  zip_code                                                   String             @db.VarChar(10)
+  Renamedpackage_Renamedpackage_receiver_address_idToaddress Renamedpackage[]   @relation("Renamedpackage_receiver_address_idToaddress")
+  Renamedpackage_Renamedpackage_sender_address_idToaddress   Renamedpackage[]   @relation("Renamedpackage_sender_address_idToaddress")
+  tracking_updates                                           tracking_updates[]
 }
 
-model Address {
-  id               String           @id @default(uuid()) @db.Uuid
-  street           String           @db.VarChar(150)
-  city             String           @db.VarChar(80)
-  state            String           @db.Char(2)
-  zipCode          String           @map("zip_code") @db.VarChar(10)
-  receiverPackages Package[]        @relation("ReceiverAddressRelation")
-  senderPackages   Package[]        @relation("SenderAddressRelation")
-  trackingUpdates  TrackingUpdate[]
-
-  @@map("address")
+model courier {
+  id               String             @id @db.Uuid
+  name             String             @db.VarChar(100)
+  vehicle_type     String?            @db.VarChar(50)
+  delivery_attempt delivery_attempt[]
+  tracking_updates tracking_updates[]
 }
 
-model DistributionCenter {
-  id              String           @id @default(uuid()) @db.Uuid
-  name            String           @db.VarChar(100)
-  city            String?          @db.VarChar(80)
-  state           String?          @db.Char(2)
-  trackingUpdates TrackingUpdate[]
-
-  @@map("distribution_center")
+model customer {
+  id                                                  String           @id @db.Uuid
+  name                                                String           @db.VarChar(100)
+  phone                                               String?          @db.VarChar(20)
+  email                                               String?          @unique @db.VarChar(150)
+  password                                            String
+  notification                                        notification[]
+  Renamedpackage_Renamedpackage_receiver_idTocustomer Renamedpackage[] @relation("Renamedpackage_receiver_idTocustomer")
+  Renamedpackage_Renamedpackage_sender_idTocustomer   Renamedpackage[] @relation("Renamedpackage_sender_idTocustomer")
 }
 
-model Courier {
-  id               String            @id @default(uuid()) @db.Uuid
-  name             String            @db.VarChar(100)
-  vehicleType      String?           @map("vehicle_type") @db.VarChar(50)
-  deliveryAttempts DeliveryAttempt[]
-  trackingUpdates  TrackingUpdate[]
-
-  @@map("courier")
+model delivery_attempt {
+  id             String                  @id @db.Uuid
+  package_id     String                  @db.Uuid
+  courier_id     String                  @db.Uuid
+  attempt_number Int
+  status         delivery_attempt_status
+  notes          String?
+  attempted_at   DateTime?               @default(now()) @db.Timestamp(6)
+  courier        courier                 @relation(fields: [courier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Renamedpackage Renamedpackage          @relation(fields: [package_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model Package {
-  id                String            @id @default(uuid()) @db.Uuid
-  trackingCode      String            @unique @map("tracking_code") @db.VarChar(20)
-  senderId          String            @map("sender_id") @db.Uuid
-  receiverId        String            @map("receiver_id") @db.Uuid
-  currentStatus     package_status    @map("current_status")
-  currentLocation   String?           @map("current_location") @db.VarChar(100)
-  senderAddressId   String?           @map("sender_address_id") @db.Uuid
-  receiverAddressId String?           @map("receiver_address_id") @db.Uuid
-  isCanceled        Boolean?          @default(false) @map("is_canceled")
-  createdAt         DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
-  deliveryAttempts  DeliveryAttempt[]
-  notifications     Notification[]
-  receiverAddress   Address?          @relation("ReceiverAddressRelation", fields: [receiverAddressId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  receiver          Customer          @relation("ReceiverRelation", fields: [receiverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  senderAddress     Address?          @relation("SenderAddressRelation", fields: [senderAddressId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sender            Customer          @relation("SenderRelation", fields: [senderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  items             PackageItem[]
-  trackingUpdates   TrackingUpdate[]
+model distribution_center {
+  id               String             @id @db.Uuid
+  name             String             @db.VarChar(100)
+  city             String?            @db.VarChar(80)
+  state            String?            @db.Char(2)
+  tracking_updates tracking_updates[]
+}
+
+model notification {
+  id             String              @id @db.Uuid
+  package_id     String              @db.Uuid
+  customer_id    String              @db.Uuid
+  message        String
+  sent_at        DateTime?           @default(now()) @db.Timestamp(6)
+  status         notification_status
+  customer       customer            @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Renamedpackage Renamedpackage      @relation(fields: [package_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model has been renamed to 'Renamedpackage' during introspection, because the original name 'package' is reserved.
+model Renamedpackage {
+  id                                                  String             @id @db.Uuid
+  tracking_code                                       String             @unique @db.VarChar(20)
+  sender_id                                           String             @db.Uuid
+  receiver_id                                         String             @db.Uuid
+  current_status                                      package_status
+  current_location                                    String?            @db.VarChar(100)
+  sender_address_id                                   String?            @db.Uuid
+  receiver_address_id                                 String?            @db.Uuid
+  is_canceled                                         Boolean?           @default(false)
+  created_at                                          DateTime?          @default(now()) @db.Timestamp(6)
+  delivery_attempt                                    delivery_attempt[]
+  notification                                        notification[]
+  address_Renamedpackage_receiver_address_idToaddress address?           @relation("Renamedpackage_receiver_address_idToaddress", fields: [receiver_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customer_Renamedpackage_receiver_idTocustomer       customer           @relation("Renamedpackage_receiver_idTocustomer", fields: [receiver_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  address_Renamedpackage_sender_address_idToaddress   address?           @relation("Renamedpackage_sender_address_idToaddress", fields: [sender_address_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customer_Renamedpackage_sender_idTocustomer         customer           @relation("Renamedpackage_sender_idTocustomer", fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  package_item                                        package_item[]
+  tracking_updates                                    tracking_updates[]
 
   @@map("package")
 }
 
-model TrackingUpdate {
-  id                 String              @id @default(uuid()) @db.Uuid
-  packageId          String              @map("package_id") @db.Uuid
-  status             package_status
-  locationId         String?             @map("location_id") @db.Uuid
-  courierId          String?             @map("courier_id") @db.Uuid
-  centerId           String?             @map("center_id") @db.Uuid
-  updatedAt          DateTime?           @default(now()) @map("updated_at") @db.Timestamp(6)
-  distributionCenter DistributionCenter? @relation(fields: [centerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  courier            Courier?            @relation(fields: [courierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  location           Address?            @relation(fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  package            Package             @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@map("tracking_updates")
+model package_item {
+  id             String         @id @db.Uuid
+  package_id     String         @db.Uuid
+  description    String         @db.VarChar(150)
+  weight         Float?
+  Renamedpackage Renamedpackage @relation(fields: [package_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
-model PackageItem {
-  id          String  @id @default(uuid()) @db.Uuid
-  packageId   String  @map("package_id") @db.Uuid
-  description String  @db.VarChar(150)
-  weight      Float?
-  package     Package @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@map("package_item")
-}
-
-model DeliveryAttempt {
-  id            String                  @id @default(uuid()) @db.Uuid
-  packageId     String                  @map("package_id") @db.Uuid
-  courierId     String                  @map("courier_id") @db.Uuid
-  attemptNumber Int                     @map("attempt_number")
-  status        delivery_attempt_status
-  notes         String?
-  attemptedAt   DateTime?               @default(now()) @map("attempted_at") @db.Timestamp(6)
-  courier       Courier                 @relation(fields: [courierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  package       Package                 @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@map("delivery_attempt")
-}
-
-model Notification {
-  id         String              @id @default(uuid()) @db.Uuid
-  packageId  String              @map("package_id") @db.Uuid
-  customerId String              @map("customer_id") @db.Uuid
-  message    String
-  sentAt     DateTime?           @default(now()) @map("sent_at") @db.Timestamp(6)
-  status     notification_status
-  customer   Customer            @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  package    Package             @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@map("notification")
-}
-
-enum package_status {
-  posted
-  in_transit
-  out_for_delivery
-  delivered
-  canceled
+model tracking_updates {
+  id                  String               @id @db.Uuid
+  package_id          String               @db.Uuid
+  status              package_status
+  location_id         String?              @db.Uuid
+  courier_id          String?              @db.Uuid
+  center_id           String?              @db.Uuid
+  updated_at          DateTime?            @default(now()) @db.Timestamp(6)
+  distribution_center distribution_center? @relation(fields: [center_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  courier             courier?             @relation(fields: [courier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  address             address?             @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Renamedpackage      Renamedpackage       @relation(fields: [package_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 enum delivery_attempt_status {
@@ -148,4 +126,12 @@ enum notification_status {
   pending
   sending
   failed
+}
+
+enum package_status {
+  posted
+  in_transit
+  out_for_delivery
+  delivered
+  canceled
 }

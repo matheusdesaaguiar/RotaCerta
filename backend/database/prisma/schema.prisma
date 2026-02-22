@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id               String         @id @default(uuid()) @db.Uuid
+  name             String         @db.VarChar(100)
+  phone            String?        @db.VarChar(20)
+  email            String?        @unique @db.VarChar(150)
+  password         String
+  notifications    Notification[]
+  packagesReceived Package[]      @relation("ReceiverRelation")
+  packagesSent     Package[]      @relation("SenderRelation")
+
+  @@map("customer")
+}
+
+model Address {
+  id               String           @id @default(uuid()) @db.Uuid
+  street           String           @db.VarChar(150)
+  city             String           @db.VarChar(80)
+  state            String           @db.Char(2)
+  zipCode          String           @map("zip_code") @db.VarChar(10)
+  receiverPackages Package[]        @relation("ReceiverAddressRelation")
+  senderPackages   Package[]        @relation("SenderAddressRelation")
+  trackingUpdates  TrackingUpdate[]
+
+  @@map("address")
+}
+
+model DistributionCenter {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String           @db.VarChar(100)
+  city            String?          @db.VarChar(80)
+  state           String?          @db.Char(2)
+  trackingUpdates TrackingUpdate[]
+
+  @@map("distribution_center")
+}
+
+model Courier {
+  id               String            @id @default(uuid()) @db.Uuid
+  name             String            @db.VarChar(100)
+  vehicleType      String?           @map("vehicle_type") @db.VarChar(50)
+  deliveryAttempts DeliveryAttempt[]
+  trackingUpdates  TrackingUpdate[]
+
+  @@map("courier")
+}
+
+model Package {
+  id                String            @id @default(uuid()) @db.Uuid
+  trackingCode      String            @unique @map("tracking_code") @db.VarChar(20)
+  senderId          String            @map("sender_id") @db.Uuid
+  receiverId        String            @map("receiver_id") @db.Uuid
+  currentStatus     package_status    @map("current_status")
+  currentLocation   String?           @map("current_location") @db.VarChar(100)
+  senderAddressId   String?           @map("sender_address_id") @db.Uuid
+  receiverAddressId String?           @map("receiver_address_id") @db.Uuid
+  isCanceled        Boolean?          @default(false) @map("is_canceled")
+  createdAt         DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
+  deliveryAttempts  DeliveryAttempt[]
+  notifications     Notification[]
+  receiverAddress   Address?          @relation("ReceiverAddressRelation", fields: [receiverAddressId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  receiver          Customer          @relation("ReceiverRelation", fields: [receiverId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  senderAddress     Address?          @relation("SenderAddressRelation", fields: [senderAddressId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sender            Customer          @relation("SenderRelation", fields: [senderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items             PackageItem[]
+  trackingUpdates   TrackingUpdate[]
+
+  @@map("package")
+}
+
+model TrackingUpdate {
+  id                 String              @id @default(uuid()) @db.Uuid
+  packageId          String              @map("package_id") @db.Uuid
+  status             package_status
+  locationId         String?             @map("location_id") @db.Uuid
+  courierId          String?             @map("courier_id") @db.Uuid
+  centerId           String?             @map("center_id") @db.Uuid
+  updatedAt          DateTime?           @default(now()) @map("updated_at") @db.Timestamp(6)
+  distributionCenter DistributionCenter? @relation(fields: [centerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  courier            Courier?            @relation(fields: [courierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  location           Address?            @relation(fields: [locationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  package            Package             @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("tracking_updates")
+}
+
+model PackageItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  packageId   String  @map("package_id") @db.Uuid
+  description String  @db.VarChar(150)
+  weight      Float?
+  package     Package @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("package_item")
+}
+
+model DeliveryAttempt {
+  id            String                  @id @default(uuid()) @db.Uuid
+  packageId     String                  @map("package_id") @db.Uuid
+  courierId     String                  @map("courier_id") @db.Uuid
+  attemptNumber Int                     @map("attempt_number")
+  status        delivery_attempt_status
+  notes         String?
+  attemptedAt   DateTime?               @default(now()) @map("attempted_at") @db.Timestamp(6)
+  courier       Courier                 @relation(fields: [courierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  package       Package                 @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("delivery_attempt")
+}
+
+model Notification {
+  id         String              @id @default(uuid()) @db.Uuid
+  packageId  String              @map("package_id") @db.Uuid
+  customerId String              @map("customer_id") @db.Uuid
+  message    String
+  sentAt     DateTime?           @default(now()) @map("sent_at") @db.Timestamp(6)
+  status     notification_status
+  customer   Customer            @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  package    Package             @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("notification")
+}
+
+enum package_status {
+  posted
+  in_transit
+  out_for_delivery
+  delivered
+  canceled
+}
+
+enum delivery_attempt_status {
+  success
+  failed
+  recipient_absent
+  address_not_found
+  refused
+}
+
+enum notification_status {
+  pending
+  sending
+  failed
+}
