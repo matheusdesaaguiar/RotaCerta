@@ -1,6 +1,3 @@
--- CreateSchema
-CREATE SCHEMA IF NOT EXISTS "public";
-
 -- CreateEnum
 CREATE TYPE "delivery_attempt_status" AS ENUM ('success', 'failed', 'recipient_absent', 'address_not_found', 'refused');
 
@@ -35,7 +32,7 @@ CREATE TABLE "customer" (
     "id" UUID NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "phone" VARCHAR(20),
-    "email" VARCHAR(150),
+    "email" VARCHAR(150) NOT NULL,
     "password" TEXT NOT NULL,
 
     CONSTRAINT "customer_pkey" PRIMARY KEY ("id")
@@ -159,4 +156,3 @@ ALTER TABLE "tracking_updates" ADD CONSTRAINT "tracking_updates_location_id_fkey
 
 -- AddForeignKey
 ALTER TABLE "tracking_updates" ADD CONSTRAINT "tracking_updates_package_id_fkey" FOREIGN KEY ("package_id") REFERENCES "package"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-

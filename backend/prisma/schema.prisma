@@ -30,7 +30,7 @@ model customer {
   id                                                  String           @id @db.Uuid
   name                                                String           @db.VarChar(100)
   phone                                               String?          @db.VarChar(20)
-  email                                               String?          @unique @db.VarChar(150)
+  email                                               String           @unique @db.VarChar(150)
   password                                            String
   notification                                        notification[]
   Renamedpackage_Renamedpackage_receiver_idTocustomer Renamedpackage[] @relation("Renamedpackage_receiver_idTocustomer")

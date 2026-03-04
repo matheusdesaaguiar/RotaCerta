@@ -1,30 +1,33 @@
 import { prisma } from "../lib/prisma.ts";
+import { v4 as uuid4 } from "uuid";
 
-class CostumerService {
-    async createCostumer(data) {
-        const newCostumer = await prisma.costumer.create({
+class CustomerService {
+    async createCustomer(data) {
+        console.log(data);
+        const newCostumer = await prisma.customer.create({
             data: {
+                id: uuid4(),
                 name: data.name,
                 phone: data.phone,
                 email:data.email,
                 password: data.password
             }
-        })
+        });
         return newCostumer;
     }
 
-    async getAllCostumers() {
+    async getAllCustomers() {
         return await prisma.customer.findMany({});
     }
 
-    async getCostumerId(id) {
-        return await prisma.costumer.findUnique({
-            where: { id },
+    async getCustomerId(id) {
+        return await prisma.customer.findUnique({
+            where: { id }
         });
     }
 
-    async updateCostumer(id, data) {
-        return await prisma.costumer.update({
+    async updateCustomer(id, data) {
+        return await prisma.customer.update({
             where: { id },
             data: {
                 name: data.name,
@@ -32,14 +35,14 @@ class CostumerService {
                 phone: data.phone,
                 password: data.password
             }
-        })
+        });
     }
 
-    async deleteCostumer(id) {
-        return  await prisma.costumer.delete({
+    async deleteCustomer(id) {
+        return  await prisma.customer.delete({
             where: { id }
         });
     }
 }
 
-export default new CostumerService();
+export default new CustomerService();
